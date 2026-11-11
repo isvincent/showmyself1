@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我和別人不一樣的地方 - 教學影片</title>
+    <style>
+        /* 基本重設與滿版設定 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+            overflow: hidden;
+        }
+        
+        /* 16:9 簡報容器 */
+        #presentation-container {
+            position: relative;
+            width: 100vw;
+            max-width: 177.78vh; /* 16:9 aspect ratio (16/9 = 1.7778) */
+            height: 56.25vw; /* 9:16 aspect ratio (9/16 = 0.5625) */
+            max-height: 100vh;
+            background-color: #fff;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* 背景圖片層 (雙層設計用於平滑轉場) */
+        .bg-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            z-index: 1;
+        }
+        .bg-layer.active {
+            opacity: 1;
+        }
+
+        /* 內容區塊，文字統一配置於左側乾淨區域 */
+        #content-layer {
+            position: absolute;
+            top: 15%;
+            left: 5%;
+            width: 45%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* 標題視覺化設計 */
+        .slide-title {
+            font-size: 3.5vw;
+            font-weight: 900;
+            color: #2c3e50;
+            text-shadow: 2px 2px 0px rgba(255,255,255,0.9), -1px -1px 4px rgba(255,255,255,0.8);
+            border-bottom: 5px solid #ff7e67;
+            display: inline-block;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+
+        /* 項目符號設計 */
+        .bullets-container {
+            list-style: none;
+        }
+        .bullet-item {
+            font-size: 2.2vw;
+            font-weight: bold;
+            color: #34495e;
+            text-shadow: 2px 2px 2px rgba(255,255,255,0.9);
+            margin-bottom: 20px;
+            position: relative;
+            padding-left: 45px;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        /* 自訂SVG Icon */
+        .bullet-item::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff7e67'%3E%3Cpath d='M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        /* 動畫 Classes */
+        .animate-title {
+            animation: slideInTitle 0.8s forwards cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .animate-bullet {
+            animation: fadeInUp 0.8s forwards cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        @keyframes slideInTitle {
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 字幕區塊設計 */
+        #subtitle-container {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            text-align: center;
+            z-index: 10;
+        }
+        .subtitle-text {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 2.5vw;
+            letter-spacing: 2px;
+            text-shadow: 1px 1px 3px #000;
+            white-space: pre-wrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* 開始按鈕與覆蓋層 (瀏覽器要求需經由使用者互動才能播放語音) */
+        #start-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 99;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+        }
+        #start-btn {
+            background-color: #ff7e67;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 2vw;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 126, 103, 0.5);
+            transition: transform 0.2s;
+        }
+        #start-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="presentation-container">
+        <!-- 背景層 -->
+        <div id="bg-layer-1" class="bg-layer active"></div>
+        <div id="bg-layer-2" class="bg-layer"></div>
+
+        <!-- 投影片文字內容層 -->
+        <div id="content-layer">
+            <h1 id="slide-title" class="slide-title"></h1>
+            <ul id="slide-bullets" class="bullets-container"></ul>
+        </div>
+
+        <!-- 字幕層 -->
+        <div id="subtitle-container">
+            <div id="subtitle" class="subtitle-text"></div>
+        </div>
+
+        <!-- 開始畫面 -->
+        <div id="start-overlay">
+            <h1 style="font-size: 3vw; margin-bottom: 20px;">我和別人不一樣的地方</h1>
+            <p style="font-size: 1.5vw; margin-bottom: 40px;">請確認音量已開啟，點擊下方按鈕開始播放</p>
+            <button id="start-btn">開始播放影片</button>
+        </div>
+    </div>
+
+    <script>
+        // 將 JSON 資料轉化為 JavaScript 陣列
+        const slidesData = [
+            {
+                image: "第1張.jpg",
+                title: "我從一片葉子介紹自己",
+                bullets: ["我喜歡觀察容易被忽略的小事", "我正慢慢發現這些習慣的意義"],
+                narration: "如果用一個畫面介紹自己，我會是放學後蹲在教室窗邊，替葉子拍照的人。我想知道，夕陽下的葉影為什麼像一張小地圖。以前我覺得這些觀察沒什麼用，現在才慢慢發現，這也是我的特色。"
+            },
+            {
+                image: "第2張.jpg",
+                title: "我習慣先聽，再慢慢說",
+                bullets: ["我需要先整理，才知道想說什麼", "我用關係圖幫大家找到共同方向"],
+                narration: "小組討論時，我常常還在畫線、記關鍵字，大家就已經說了好多點子。我也擔心別人以為我沒想法。有一次，我把討論整理成關係圖，讓大家看見三個點子的共同問題。我才發現，先聽再說也能幫上忙。"
+            },
+            {
+                image: "第3張.jpg",
+                title: "我想留下普通事物的樣子",
+                bullets: ["我喜歡拍倒影、書包和課本", "我用照片留下自己看見的小事"],
+                narration: "我的手機裡，有雨後操場的倒影，也有被風吹得翻頁的課本。我曾拍下兩把掃把的長影子，覺得像兩個人在聊天。朋友問這有什麼好拍，我先失落，後來卻笑了。原來同一個地方，我們真的會看見不同的東西。"
+            },
+            {
+                image: "第4張.jpg",
+                title: "我在重拍中找到問題",
+                bullets: ["我做停格動畫時，遇到晃動和手入鏡", "我固定手機、標記位置，讓畫面更順"],
+                narration: "我曾用便利貼替班上成果報告做停格動畫，卻遇到桌面晃動、手跑進畫面的問題。我重拍好幾次，固定手機、貼好位置後，畫面才順了一點。成品只有十幾秒，但看見便利貼動起來，我最開心的是終於找到問題。"
+            },
+            {
+                image: "第5張.jpg",
+                title: "我用陪伴靠近朋友",
+                bullets: ["我會陪朋友練習報告", "我也能用一起走路表達關心"],
+                narration: "朋友難過時，我不太會立刻說出安慰的話，有時還怕說錯。但我會陪朋友練習報告，也會問安靜的同學要不要一起走。有一次，我陪考差的朋友繞操場兩圈。他說有人陪著就很好，讓我知道關心不一定要說很多話。"
+            },
+            {
+                image: "第6張.jpg",
+                title: "我開始分享自己的眼光",
+                bullets: ["我曾因為怕點子奇怪，不敢分享照片", "我拍下的表情，讓同學看見不同細節"],
+                narration: "我也曾羨慕別人的自信，怕照片太奇怪而不敢分享。後來，同學邀我拍班級活動，我答應了，卻拖了兩天才敢放進班群。看到大家說我拍到他們沒注意的表情，我才鬆口氣。原來想得多，也能讓我多看見一些事情。"
+            },
+            {
+                image: "第7張.jpg",
+                title: "我想帶著自己的步調往前走",
+                bullets: ["我想把校園角落整理成影像日記", "我想練習提早說出還不完整的想法", "我願意把眼中的世界分享給別人"],
+                narration: "接下來，我想把校園角落整理成影像日記，也練習在討論時，提早說出還不完整的想法。我想保留觀察、傾聽和反覆嘗試的習慣，同時多往前走一步。這些普通的特點組成了我，我願意把眼中的世界分享給別人。"
+            }
+        ];
+
+        let currentSlide = 0;
+        let activeBgLayer = 1;
+        let voices = [];
+
+        // 預先載入語音引擎
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+        }
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+
+        // 選擇 Microsoft Zhiwei 或適用的中文男性語音
+        function getMaleChineseVoice() {
+            // 優先尋找 Microsoft Zhiwei
+            let voice = voices.find(v => v.name.includes("Zhiwei"));
+            if (voice) return voice;
+            // 退而求其次尋找其他中文男性 (依照名稱特徵推測)
+            voice = voices.find(v => (v.lang === "zh-TW" || v.lang === "zh-CN") && (v.name.includes("Male") || v.name.includes("Yun") || v.name.includes("Kangkang")));
+            if (voice) return voice;
+            // 隨便找一個中文語音做為最後備案
+            return voices.find(v => v.lang.includes("zh")) || voices[0];
+        }
+
+        // 句子切割：將整段文字依據標點符號分割，讓每次顯示的字幕在畫面範圍內
+        function chunkNarration(text) {
+            // 利用正規表達式切割，保留標點符號
+            const regex = /[^，。！？]+[，。！？]?/g;
+            return text.match(regex).map(s => s.trim()).filter(s => s.length > 0);
+        }
+
+        // 播放投影片
+        function playSlide(index) {
+            if (index >= slidesData.length) {
+                // 簡報結束
+                document.getElementById('subtitle').innerHTML = "簡報結束，謝謝觀賞！";
+                document.getElementById('subtitle').style.opacity = 1;
+                return;
+            }
+
+            const slide = slidesData[index];
+
+            // 1. 處理背景圖片轉場
+            const currentBg = document.getElementById(`bg-layer-${activeBgLayer}`);
+            activeBgLayer = activeBgLayer === 1 ? 2 : 1;
+            const nextBg = document.getElementById(`bg-layer-${activeBgLayer}`);
+            
+            nextBg.style.backgroundImage = `url('${slide.image}')`;
+            nextBg.classList.add('active');
+            currentBg.classList.remove('active');
+
+            // 2. 清除並重設文字內容區塊
+            const titleEl = document.getElementById('slide-title');
+            const bulletsEl = document.getElementById('slide-bullets');
+            
+            // 重置動畫
+            titleEl.classList.remove('animate-title');
+            titleEl.style.opacity = 0;
+            titleEl.innerText = slide.title;
+            bulletsEl.innerHTML = ""; // 清空項目
+
+            // 觸發標題動畫
+            setTimeout(() => { titleEl.classList.add('animate-title'); }, 800);
+
+            // 準備並依序播放項目符號 (避免文字一次出現)
+            slide.bullets.forEach((bulletText, i) => {
+                let li = document.createElement('li');
+                li.className = 'bullet-item';
+                li.innerText = bulletText;
+                bulletsEl.appendChild(li);
+                
+                // 每隔 1.2 秒飛入一個項目符號
+                setTimeout(() => {
+                    li.classList.add('animate-bullet');
+                }, 1500 + (i * 1200));
+            });
+
+            // 3. 處理語音與字幕
+            const textChunks = chunkNarration(slide.narration);
+            playNarrationChunks(textChunks, 0, () => {
+                // 當前投影片語音結束後，等待 1.5 秒切換下一張
+                setTimeout(() => {
+                    document.getElementById('subtitle').style.opacity = 0;
+                    playSlide(index + 1);
+                }, 1500);
+            });
+        }
+
+        // 遞迴播放文字區塊 (語音配字幕)
+        function playNarrationChunks(chunks, chunkIndex, onSlideComplete) {
+            if (chunkIndex >= chunks.length) {
+                onSlideComplete();
+                return;
+            }
+
+            const chunkText = chunks[chunkIndex];
+            
+            // 更新字幕畫面
+            const subtitleEl = document.getElementById('subtitle');
+            subtitleEl.innerText = chunkText;
+            subtitleEl.style.opacity = 1;
+
+            // 設定語音合成
+            const utterance = new SpeechSynthesisUtterance(chunkText);
+            const voice = getMaleChineseVoice();
+            if (voice) utterance.voice = voice;
+            
+            // 設定中等偏快語速 (1.2倍)
+            utterance.rate = 1.2;
+            utterance.pitch = 1.0;
+
+            // 當這句話唸完時，繼續唸下一句
+            utterance.onend = () => {
+                playNarrationChunks(chunks, chunkIndex + 1, onSlideComplete);
+            };
+            
+            // 例外處理：若因故中斷，確保流程能繼續
+            utterance.onerror = (e) => {
+                console.error("Speech Synthesis Error:", e);
+                setTimeout(() => {
+                    playNarrationChunks(chunks, chunkIndex + 1, onSlideComplete);
+                }, 2000);
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // 綁定開始按鈕
+        document.getElementById('start-btn').addEventListener('click', () => {
+            // 隱藏覆蓋層
+            document.getElementById('start-overlay').style.display = 'none';
+            // 啟動瀏覽器語音權限並開始播放第一張投影片
+            if(voices.length === 0) loadVoices();
+            setTimeout(() => {
+                playSlide(0);
+            }, 500);
+        });
+
+    </script>
+</body>
+</html>
